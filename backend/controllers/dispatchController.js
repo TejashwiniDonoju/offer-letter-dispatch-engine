@@ -136,19 +136,18 @@ exports.dispatchLetter = async (req, res) => {
 
         // 🌟 REPAIR 2: Use direct SMTP configuration via Port 465 to bypass Render's firewall filters
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true, // true for port 465
-            auth: { 
-                user: gmailUser, 
-                pass: gmailPass 
-            },
-            tls: {
-                rejectUnauthorized: false // Bypasses corporate network SSL tracking rejections
-            },
-            connectionTimeout: 20000, // Extend timeouts to 20 seconds
-            greetingTimeout: 20000
-        });
+    // 🚀 Switch from custom SMTP settings to the native Google service driver
+    service: 'gmail',
+    auth: {
+        type: 'OAuth2',
+        user: gmailUser,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN // Optional but helps persist sessions
+    },
+    connectionTimeout: 30000, // Boost timeout to 30 seconds
+    greetingTimeout: 30000
+});
 
         // 2. Dispatch a clean HTML email directly
         await transporter.sendMail({
