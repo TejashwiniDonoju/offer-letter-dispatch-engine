@@ -19,7 +19,6 @@ app.use(cors({
 }));
 
 // Crucial: Parse incoming JSON body payloads
-express.json() inside request pipelines
 app.use(express.json());
 
 // Bind our main API router under /api
