@@ -117,11 +117,11 @@ exports.dispatchLetter = async (req, res) => {
     const { email, name, htmlContent } = req.body;
     
     try {
-        console.log(`🚀 RUNNING LIGHTWEIGHT SMTP TEST FOR: ${email}`);
+        console.log(`🚀 RUNNING SECURE SMTP PRODUCTION DISPATCH FOR: ${email}`);
 
-        // 1. Identify active system SMTP configurations with naming fallbacks
-        const gmailUser = process.env.GMAIL_USER || process.env.SMTP_USER;
-        const gmailPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
+        // 🌟 REPAIR 1: Read the exact variable keys saved on your Render Dashboard
+        const gmailUser = process.env.EMAIL_USER || process.env.GMAIL_USER || process.env.SMTP_USER;
+        const gmailPass = process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
 
         console.log("Checking loaded keys...");
         console.log("- GMAIL_USER found:", !!gmailUser);
@@ -130,21 +130,29 @@ exports.dispatchLetter = async (req, res) => {
         if (!gmailUser || !gmailPass) {
             return res.status(400).json({
                 error: "Missing Environmental Variables",
-                details: "Your backend .env file is missing either GMAIL_USER or GMAIL_APP_PASSWORD values entirely."
+                details: "Your Render environment is missing valid EMAIL_USER or EMAIL_PASS values entirely."
             });
         }
 
+        // 🌟 REPAIR 2: Use direct SMTP configuration via Port 465 to bypass Render's firewall filters
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true, // true for port 465
             auth: { 
                 user: gmailUser, 
                 pass: gmailPass 
-            }
+            },
+            tls: {
+                rejectUnauthorized: false // Bypasses corporate network SSL tracking rejections
+            },
+            connectionTimeout: 20000, // Extend timeouts to 20 seconds
+            greetingTimeout: 20000
         });
 
-        // 2. Dispatch a clean HTML email directly (No Puppeteer/PDF generation)
+        // 2. Dispatch a clean HTML email directly
         await transporter.sendMail({
-            from: gmailUser,
+            from: `"Human Resources" <${gmailUser}>`,
             to: email,
             subject: `Official Job Offer Letter - ${name}`,
             html: htmlContent 
@@ -156,7 +164,6 @@ exports.dispatchLetter = async (req, res) => {
     } catch (error) {
         console.error("🚨 TEST DISPATCH EXCEPTION:", error);
         
-        // 🌟 REPAIR: Return the EXACT error message directly to the frontend response payload!
         return res.status(500).json({ 
             error: error.message || "Unknown SMTP internal error context", 
             details: error.stack 
