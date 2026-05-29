@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
+const axios = require('axios');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-enterprise-token-key-999';
@@ -117,37 +118,31 @@ exports.dispatchLetter = async (req, res) => {
     const { email, name, htmlContent } = req.body;
     
     try {
-        console.log(`🚀 RUNNING SECURE SMTP PRODUCTION DISPATCH FOR: ${email}`);
+        console.log(`🚀 RUNNING BREVO WEB API DISPATCH FOR: ${email}`);
 
-        // 🌟 REPAIR 1: Read the exact variable keys saved on your Render Dashboard
-        const gmailUser = process.env.EMAIL_USER || process.env.GMAIL_USER || process.env.SMTP_USER;
-        const gmailPass = process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
+        const senderEmail = process.env.EMAIL_USER || 'tejashwinidonoju678@gmail.com';
+        const apiKey = process.env.BREVO_API_KEY;
 
-        console.log("Checking loaded keys...");
-        console.log("- GMAIL_USER found:", !!gmailUser);
-        console.log("- GMAIL_APP_PASSWORD found:", !!gmailPass);
-
-        if (!gmailUser || !gmailPass) {
+        if (!apiKey) {
             return res.status(400).json({
-                error: "Missing Environmental Variables",
-                details: "Your Render environment is missing valid EMAIL_USER or EMAIL_PASS values entirely."
+                error: "Missing API Key",
+                details: "Your Render environment is missing the BREVO_API_KEY value."
             });
         }
 
-        // 🌟 REPAIR 2: Use direct SMTP configuration via Port 465 to bypass Render's firewall filters
-        const transporter = nodemailer.createTransport({
-    // 🚀 Switch from custom SMTP settings to the native Google service driver
-    service: 'gmail',
-    auth: {
-        type: 'OAuth2',
-        user: gmailUser,
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        refreshToken: process.env.GOOGLE_REFRESH_TOKEN // Optional but helps persist sessions
-    },
-    connectionTimeout: 30000, // Boost timeout to 30 seconds
-    greetingTimeout: 30000
-});
+        // 🚀 Send email via standard HTTP POST request (Bypasses all Render port blocks!)
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
+            sender: { name: "Human Resources", email: senderEmail },
+            to: [{ email: email, name: name }],
+            subject: `Official Job Offer Letter - ${name}`,
+            htmlContent: htmlContent
+        }, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': apiKey,
+                'content-type': 'application/json'
+            }
+        });
 
         // 2. Dispatch a clean HTML email directly
         await transporter.sendMail({
@@ -157,15 +152,18 @@ exports.dispatchLetter = async (req, res) => {
             html: htmlContent 
         });
 
-        console.log(`🎉 Test email sent successfully straight to: ${email}`);
-        return res.status(200).json({ success: true, message: 'Offer letter template sent directly to inbox!' });
+        console.log(`🎉 Email sent successfully via Brevo to: ${email}`, response.data);
+        return res.status(200).json({ success: true, message: 'Offer letter template sent directly to inbox via API!' });
 
     } catch (error) {
-        console.error("🚨 TEST DISPATCH EXCEPTION:", error);
+        console.error("🚨 BREVO DISPATCH EXCEPTION:", error.response ? error.response.data : error.message);
         
         return res.status(500).json({ 
-            error: error.message || "Unknown SMTP internal error context", 
-            details: error.stack 
+            error: "Web API Email Dispatch Failed", 
+            details: error.response ? JSON.stringify(error.response.data) : error.message 
         });
     }
 };
+
+// 🌟 Make sure the file cleanly ends right here. 
+// Everything below this line (the old transporter.sendMail lines) must be deleted!
