@@ -144,14 +144,6 @@ exports.dispatchLetter = async (req, res) => {
             }
         });
 
-        // 2. Dispatch a clean HTML email directly
-        await transporter.sendMail({
-            from: `"Human Resources" <${gmailUser}>`,
-            to: email,
-            subject: `Official Job Offer Letter - ${name}`,
-            html: htmlContent 
-        });
-
         console.log(`🎉 Email sent successfully via Brevo to: ${email}`, response.data);
         return res.status(200).json({ success: true, message: 'Offer letter template sent directly to inbox via API!' });
 
@@ -164,6 +156,4 @@ exports.dispatchLetter = async (req, res) => {
         });
     }
 };
-
-// 🌟 Make sure the file cleanly ends right here. 
-// Everything below this line (the old transporter.sendMail lines) must be deleted!
+// 🌟 Ensure the file ends cleanly here! Delete anything below this closing bracket.
