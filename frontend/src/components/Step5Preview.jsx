@@ -19,6 +19,26 @@ export default function Step5Preview({
   // This is the functional body text sent inside the email section itself
   const mailBodyMessage = `Hello ${currentCandidate.name || 'Candidate'},\n\nWe are pleased to inform you that your official internship selection process is complete. Your formal Internship Offer Letter has been successfully generated and attached to the bottom of this email as a PDF document for your review.\n\nPlease download, sign, and return the copy within the requested window.\n\nBest regards,\nOperations Team`;
 
+  const downloadPDF = async () => {
+    try {
+        // Send your HTML data over to your live Render server
+        const response = await axios.post(`${apiBase}/api/generate-pdf`, { 
+            htmlContent: htmlContent 
+        }, { responseType: 'blob' }); // Expect a binary file back
+        
+        // Create a temporary link in the browser to download the received file
+        const file = new Blob([response.data], { type: 'application/pdf' });
+        const fileURL = URL.createObjectURL(file);
+        const pdfLink = document.createElement('a');
+        pdfLink.href = fileURL;
+        pdfLink.download = 'Offer_Letter.pdf';
+        pdfLink.click();
+    } catch (error) {
+        console.error("PDF download failed:", error);
+        alert("Could not generate PDF via backend server.");
+    }
+};
+
   // Matches tag brackets into actual current target items
   const compileHtml = (template, data) => {
     if (!template) return '';
