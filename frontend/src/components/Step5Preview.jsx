@@ -13,6 +13,7 @@ export default function Step5Preview({
   const [activeIndex, setActiveIndex] = useState(0);
   const [status, setStatus] = useState('');
   const [previewMode, setPreviewMode] = useState('mail'); 
+  const [isBulkSending, setIsBulkSending] = useState(false); // Tracks bulk transmission loading state
 
   const currentCandidate = candidates[activeIndex] || {};
   
@@ -37,7 +38,7 @@ export default function Step5Preview({
         console.error("PDF download failed:", error);
         alert("Could not generate PDF via backend server.");
     }
-};
+  };
 
   // Matches tag brackets into actual current target items
   const compileHtml = (template, data) => {
@@ -53,7 +54,7 @@ export default function Step5Preview({
   // Compiles the core document typography strings
   const activeInnerHtml = compileHtml(htmlContent, currentCandidate);
 
-  // 📐 Wraps the inner rich text body with the selected structure matching Step 4 configurations
+  // Wraps the inner rich text body with the selected structure matching Step 4 configurations
   const buildFullDocumentLayout = (innerBodyHtml) => {
     const logoUrl = selectedLogo === 'xyzon' ? '/xyzon_logo.png' : '/aicte_logo.png';
     
@@ -119,8 +120,8 @@ export default function Step5Preview({
         email: currentCandidate.email,
         name: currentCandidate.name,
         subject: emailSubject,
-        messageBody: mailBodyMessage, // ✉️ The structural email copy description text
-        htmlContent: activeFullTemplateHtml // 📄 The full layout schema to be turned into a PDF attachment at the bottom
+        messageBody: mailBodyMessage,
+        htmlContent: activeFullTemplateHtml 
       });
       setStatus(`Success: ${res.data.message}`);
     } catch (err) {
@@ -128,6 +129,49 @@ export default function Step5Preview({
       const backendDetails = err.response?.data?.details;
       setStatus(`❌ Dispatch Failure: ${backendError} | Info: ${backendDetails || err.message}`);
     }
+  };
+
+  // Full Parallel Bulk Dispatch Pipeline Engine
+  const handleBulkDispatchAll = async () => {
+    if (!candidates || candidates.length === 0) {
+      return alert('The queue matrix is currently completely empty.');
+    }
+
+    if (!window.confirm(`Are you sure you want to simultaneously dispatch customized offer letters to all ${candidates.length} candidates right now?`)) {
+      return;
+    }
+
+    setIsBulkSending(true);
+    setStatus(`Initializing batch matrix processing engine... Preparing ${candidates.length} payloads.`);
+
+    const backendUrl = apiBase || 'http://localhost:5000';
+    let successfulTransmissions = 0;
+    let failedTransmissions = 0;
+
+    const bulkPromises = candidates.map(async (candidate) => {
+      try {
+        const innerHtml = compileHtml(htmlContent, candidate);
+        const fullLayoutHtml = buildFullDocumentLayout(innerHtml);
+        const specificMailBody = `Hello ${candidate.name || 'Candidate'},\n\nWe are pleased to inform you that your official internship selection process is complete. Your formal Internship Offer Letter has been successfully generated and attached to the bottom of this email as a PDF document for your review.\n\nPlease download, sign, and return the copy within the requested window.\n\nBest regards,\nOperations Team`;
+
+        await axios.post(`${backendUrl}/api/dispatch`, {
+          email: candidate.email,
+          name: candidate.name,
+          subject: emailSubject,
+          messageBody: specificMailBody,
+          htmlContent: fullLayoutHtml
+        });
+        successfulTransmissions++;
+      } catch (error) {
+        console.error(`❌ Dynamic dispatch failure for candidate ${candidate.email}:`, error);
+        failedTransmissions++;
+      }
+    });
+
+    await Promise.all(bulkPromises);
+
+    setIsBulkSending(false);
+    setStatus(`Bulk processing complete! 🚀 Successfully sent: ${successfulTransmissions} | Failures: ${failedTransmissions}`);
   };
 
   return (
@@ -160,11 +204,34 @@ export default function Step5Preview({
 
         <hr style={{ margin: '20px 0', borderColor: '#e5e7eb' }} />
         
+        {/* 🚀 BULK ACTION DISPATCH BUTTON */}
+        <button 
+          onClick={handleBulkDispatchAll}
+          disabled={isBulkSending}
+          style={{ 
+            width: '100%', 
+            background: '#2563eb', 
+            color: 'white', 
+            border: 'none', 
+            padding: '14px', 
+            borderRadius: '6px', 
+            fontWeight: 'bold', 
+            cursor: isBulkSending ? 'not-allowed' : 'pointer', 
+            display: 'block', 
+            marginBottom: '12px', 
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)', 
+            opacity: isBulkSending ? 0.6 : 1 
+          }}
+        >
+          {isBulkSending ? 'Sending Bulk Batch...' : `🚀 Send All Selected (${candidates.length} Mails)`}
+        </button>
+
         <button 
           onClick={handleDispatch} 
+          disabled={isBulkSending}
           style={{ width: '100%', background: '#10b981', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'block', marginBottom: '8px' }}
         >
-          Send PDF via Gmail SMTP
+          Send Current Candidate Email
         </button>
         
         <button 
