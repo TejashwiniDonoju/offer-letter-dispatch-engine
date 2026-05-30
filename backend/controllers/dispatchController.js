@@ -153,12 +153,14 @@ exports.dispatchLetter = async (req, res) => {
                           </p>`,
             
             // 📎 This attaches the layout as a real, downloadable PDF document at the bottom!
-            attachment: [
-                {
-                    content: base64HtmlAttachment,
-                    name: `Internship_Offer_${name.replace(/\s+/g, '_')}.html.pdf` // Forces browser to download as a readable PDF file asset
-                }
-            ]
+            // 📎 Updated attachment block inside dispatchController.js
+attachment: [
+    {
+        content: base64HtmlAttachment,
+        // ✨ Change from .html.pdf to a clean .pdf extension
+        name: `Internship_Offer_${name.replace(/\s+/g, '_')}.pdf` 
+    }
+]
         }, {
             headers: {
                 'accept': 'application/json',
