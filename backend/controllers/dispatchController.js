@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
 const axios = require('axios');
-const pdf = require('html-pdf');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-enterprise-token-key-999';
