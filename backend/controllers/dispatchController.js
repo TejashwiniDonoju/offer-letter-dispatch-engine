@@ -116,7 +116,7 @@ exports.updateCandidate = async (req, res) => {
 };
 
 exports.dispatchLetter = async (req, res) => {
-    // 📥 Capture the explicit subject and messageBody from your updated frontend action triggers
+    // 📥 Safely capture inbound parameters from step 5 action hooks
     const { email, name, htmlContent, subject, messageBody } = req.body;
     
     try {
@@ -132,35 +132,33 @@ exports.dispatchLetter = async (req, res) => {
             });
         }
 
-        // 📄 Convert the dynamic HTML content into a base64 buffer for Brevo's attachment engine
-        const base64HtmlAttachment = Buffer.from(htmlContent).toString('base64');
+        // 📄 Encode the dynamic document layout cleanly into an API-compliant Base64 transport string
+        const base64HtmlAttachment = Buffer.from(htmlContent || '').toString('base64');
 
-        // 🚀 Send email via standard HTTP POST request
+        // 🚀 Dispatch transactional payload directly over Brevo HTTP pipelines
         const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
             sender: { name: "Human Resources", email: senderEmail },
             to: [{ email: email, name: name }],
             subject: subject || `Official Internship Offer Letter - ${name}`,
             
-            // ✉️ This is the main body message text inside the email view
-            textContent: messageBody || `Hello ${name},\n\nPlease find your official offer letter attached below.`,
+            // ✉️ Functional context text appearing inside email frames
+            textContent: messageBody || `Hello ${name || 'Candidate'},\n\nPlease download and review your official offer letter attached below.`,
             
-            // 🎨 (Optional) Displays a fall-back stylized notification message in the main mail body
+            // HTML backup canvas block fallback notification
             htmlContent: `<p style="font-family: sans-serif; font-size: 14px; color: #334155;">
-                            Hello ${name},<br><br>
-                            We are pleased to inform you that your offer letter has been successfully generated.<br>
+                            Hello ${name || 'Candidate'},<br><br>
+                            We are pleased to inform you that your official selection process is complete.<br>
                             <strong>Please download and review the official PDF document attached to this email.</strong><br><br>
                             Best regards,<br>Operations Team
                           </p>`,
             
-            // 📎 This attaches the layout as a real, downloadable PDF document at the bottom!
-            // 📎 Updated attachment block inside dispatchController.js
-attachment: [
-    {
-        content: base64HtmlAttachment,
-        // ✨ Change from .html.pdf to a clean .pdf extension
-        name: `Internship_Offer_${name.replace(/\s+/g, '_')}.pdf` 
-    }
-]
+            // 📎 Pure, clean .pdf extension to ensure Gmail compliance
+            attachment: [
+                {
+                    content: base64HtmlAttachment,
+                    name: `Internship_Offer_${(name || 'Candidate').replace(/\s+/g, '_')}.pdf`
+                }
+            ]
         }, {
             headers: {
                 'accept': 'application/json',
@@ -169,8 +167,8 @@ attachment: [
             }
         });
 
-        console.log(`🎉 Email with downloadable PDF attached successfully via Brevo to: ${email}`, response.data);
-        return res.status(200).json({ success: true, message: 'Offer letter attached as a downloadable PDF and sent directly to inbox!' });
+        console.log(`🎉 Email with clean PDF attachment sent successfully to: ${email}`);
+        return res.status(200).json({ success: true, message: 'Offer letter attached as a downloadable PDF and sent!' });
 
     } catch (error) {
         console.error("🚨 BREVO DISPATCH EXCEPTION:", error.response ? error.response.data : error.message);
