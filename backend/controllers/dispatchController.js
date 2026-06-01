@@ -154,7 +154,7 @@ exports.dispatchLetter = async (req, res) => {
             // 📎 Pure, clean .pdf extension to ensure Gmail compliance
             attachment: [
                 {
-                    content: base64HtmlAttachment,
+                    content: htmlContent,
                     name: `Internship_Offer_${(name || 'Candidate').replace(/\s+/g, '_')}.pdf`
                 }
             ]
