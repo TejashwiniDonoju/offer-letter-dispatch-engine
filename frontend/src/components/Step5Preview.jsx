@@ -234,12 +234,27 @@ export default function Step5Preview({
           Send Current Candidate Email
         </button>
         
-        <button 
-          onClick={() => window.print()} 
-          style={{ width: '100%', background: '#4b5563', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'block' }}
-        >
-          Download PDF Copy
-        </button>
+        {/* ✨ PASTE THIS RESTRUCTURED IMPLEMENTATION INSTEAD: */}
+<button 
+  onClick={downloadPDF} 
+  disabled={isBulkSending}
+  style={{ 
+    width: '100%', 
+    background: '#4b5563', 
+    color: 'white', 
+    border: 'none', 
+    padding: '12px', 
+    borderRadius: '6px', 
+    fontWeight: 'bold', 
+    cursor: isBulkSending ? 'not-allowed' : 'pointer', 
+    display: 'block',
+    opacity: isBulkSending ? 0.6 : 1,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+    transition: 'all 0.15s ease'
+  }}
+>
+  {isBulkSending ? 'Processing Bulk Pipeline...' : 'Download PDF Copy'}
+</button>
         
         {status && (
           <p style={{ padding: '12px', background: '#f3f4f6', border: '1px solid #cbd5e1', borderRadius: '6px', marginTop: '12px', fontSize: '13px', lineHeight: '1.4', wordBreak: 'break-word', color: '#334155' }}>
