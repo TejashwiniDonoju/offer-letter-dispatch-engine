@@ -22,15 +22,12 @@ export default function Step5Preview({
 
   const downloadPDF = () => {
     try {
-        setStatus('Initializing printable viewport container...');
-        
-        // 1. Force the page to trigger the browser's high-fidelity print utility
+        setStatus('Capturing active template parameters...');
         window.print();
-        
-        setStatus('Print sequence processed.');
+        setStatus('PDF generation window successfully executed.');
     } catch (error) {
-        console.error("Printing failure:", error);
-        alert("Could not initialize local document generator layout.");
+        console.error("Local printing failed:", error);
+        alert("Could not process local print command.");
     }
   };
 
@@ -303,11 +300,11 @@ export default function Step5Preview({
           </div>
         </div>
 
-        {/* 📬 PREVIEW CONTAINER SLOTS */}
-        {previewMode === 'mail' ? (
-          /* --- ✉️ OUTBOUND MAIL PREVIEW LAYOUT --- */
+        {/* 📬 UPDATED CONTAINER WORKSPACE */}
+        
+        {/* 1. MAIL VIEW VIEWPORT (Only visible when previewMode is 'mail') */}
+        {previewMode === 'mail' && (
           <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff', minHeight: '550px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-            
             <div style={{ background: '#f8fafc', padding: '16px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{ width: '70px', fontSize: '13px', fontWeight: 'bold', color: '#64748b' }}>To:</span>
@@ -323,13 +320,11 @@ export default function Step5Preview({
               </div>
             </div>
 
-            {/* Email Message Content Envelope */}
             <div style={{ padding: '24px' }}>
               <div style={{ whiteSpace: 'pre-line', fontSize: '14px', color: '#334155', padding: '16px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '24px', lineHeight: '1.6' }}>
                 {mailBodyMessage}
               </div>
               
-              {/* Simulated Download attachment footer link slot representing attachment position */}
               <div style={{ padding: '12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '20px' }}>📎</span>
                 <div>
@@ -338,20 +333,31 @@ export default function Step5Preview({
                 </div>
               </div>
             </div>
-
-          </div>
-        ) : (
-          /* --- 📄 STANDALONE PDF CANVAS PREVIEW LAYOUT --- */
-          <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '24px', background: '#94a3b8', minHeight: '550px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
-            {/* ✨ ADD THE CLASS NAME KEY HERE TO PRESERVE STYLES DURING FILE COMPILATION */}
-            <div className="pdf-print-canvas" style={{ background: '#ffffff', width: '100%', maxWidth: '650px', padding: '20px', borderRadius: '4px', boxShadow: '0 4px 10px rgba(0,0,0,0.15)', boxSizing: 'border-box' }}>
-              {/* Dynamic fully rendered page setup with surrounding template styles applies instantly here */}
-              <div dangerouslySetInnerHTML={{ __html: activeFullTemplateHtml }} />
-            </div>
           </div>
         )}
 
+        {/* 2. STANDALONE PDF CANVAS PREVIEW LAYOUT */}
+        {/* ✨ FIX: Removed the ternary operator wrapper entirely! This element is now always loaded in your browser DOM space so window.print() can catch it, but it hides visually on your dashboard monitor when screen previewMode equals 'mail' */}
+        <div 
+          style={{ 
+            border: '1px solid #cbd5e1', 
+            borderRadius: '8px', 
+            padding: '24px', 
+            background: '#94a3b8', 
+            minHeight: '550px', 
+            display: previewMode === 'pdf' ? 'flex' : 'none', // Dynamically hides from dashboard UI but keeps code active in DOM!
+            justifyContent: 'center', 
+            alignItems: 'flex-start' 
+          }}
+        >
+          <div className="pdf-print-canvas" style={{ background: '#ffffff', width: '100%', maxWidth: '650px', padding: '20px', borderRadius: '4px', boxShadow: '0 4px 10px rgba(0,0,0,0.15)', boxSizing: 'border-box' }}>
+            <div dangerouslySetInnerHTML={{ __html: activeFullTemplateHtml }} />
+          </div>
+        </div>
+
       </div>
-    </div>
+
+      </div>
+    // </div>
   );
 }
