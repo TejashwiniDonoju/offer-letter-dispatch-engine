@@ -136,9 +136,6 @@ exports.dispatchLetter = async (req, res) => {
         // ✨ NEW: SPIN UP HEADLESS CHROME TO PRINT A TRUE BINARY VECTOR PDF
         // =========================================================================
         browser = await puppeteer.launch({
-            executablePath: process.env.NODE_ENV === 'production' 
-                ? '/usr/bin/chromium-browser' 
-                : undefined,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
