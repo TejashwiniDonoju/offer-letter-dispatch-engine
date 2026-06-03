@@ -24,7 +24,7 @@ export default function Step5Preview({
     try {
         // Send your HTML data over to your live Render server
         const response = await axios.post(`${apiBase}/api/generate-pdf`, { 
-            htmlContent: htmlContent 
+            htmlContent: activeFullTemplateHtml 
         }, { responseType: 'blob' }); // Expect a binary file back
         
         // Create a temporary link in the browser to download the received file
@@ -32,7 +32,7 @@ export default function Step5Preview({
         const fileURL = URL.createObjectURL(file);
         const pdfLink = document.createElement('a');
         pdfLink.href = fileURL;
-        pdfLink.download = 'Offer_Letter.pdf';
+        pdfLink.download = `Offer_Letter_${(currentCandidate.name || 'Candidate').replace(/\s+/g, '_')}.pdf`;
         pdfLink.click();
     } catch (error) {
         console.error("PDF download failed:", error);
