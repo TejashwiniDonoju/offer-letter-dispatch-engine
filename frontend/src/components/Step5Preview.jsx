@@ -20,53 +20,17 @@ export default function Step5Preview({
   // This is the functional body text sent inside the email section itself
   const mailBodyMessage = `Hello ${currentCandidate.name || 'Candidate'},\n\nWe are pleased to inform you that your official internship selection process is complete. Your formal Internship Offer Letter has been successfully generated and attached to the bottom of this email as a PDF document for your review.\n\nPlease download, sign, and return the copy within the requested window.\n\nBest regards,\nOperations Team`;
 
-  const downloadPDF = async () => {
+  const downloadPDF = () => {
     try {
-        setStatus('Compiling print vector sheets locally...');
+        setStatus('Initializing printable viewport container...');
         
-        // 1. Create a completely isolated hidden iframe workspace inside your browser DOM
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = 'none';
+        // 1. Force the page to trigger the browser's high-fidelity print utility
+        window.print();
         
-        document.body.appendChild(iframe);
-        
-        // 2. Inject your fully dynamic layout directly into the window document canvas
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(`
-          <html>
-            <head>
-              <title>Offer_Letter_${(currentCandidate.name || 'Candidate').replace(/\s+/g, '_')}</title>
-              <style>
-                @page { size: A4; margin: 20mm; }
-                body { margin: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              </style>
-            </head>
-            <body>
-              ${activeFullTemplateHtml}
-            </body>
-          </html>
-        `);
-        doc.close();
-        
-        // 3. Wait a split second for assets to sync, then call the browser's native print engine
-        setTimeout(() => {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-            
-            // 4. Clean up and remove the temporary iframe element from your DOM tree
-            document.body.removeChild(iframe);
-            setStatus('Local print sequence completed.');
-        }, 500);
-
+        setStatus('Print sequence processed.');
     } catch (error) {
-        console.error("Local printing failed:", error);
-        alert("Could not process local print pipeline command.");
+        console.error("Printing failure:", error);
+        alert("Could not initialize local document generator layout.");
     }
   };
 
@@ -206,7 +170,29 @@ export default function Step5Preview({
 
   return (
     <div style={{ display: 'flex', gap: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      
+      {/* ⚡ CRITICAL: This CSS completely hides the app controls during PDF generation! */}
+      <style>{`
+        @media print {
+          /* Hide all sidebar controls, titles, statuses, and navigation elements */
+          body * {
+            visibility: hidden;
+          }
+          /* Ensure ONLY the standalone PDF layout canvas content workspace remains visible */
+          .pdf-print-canvas, .pdf-print-canvas * {
+            visibility: visible;
+          }
+          .pdf-print-canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            box-shadow: none !important;
+            border: none !important;
+          }
+        }
+      `}</style>
       {/* ================= LEFT CONTROLS & QUEUE SIDEBAR ================= */}
       <div style={{ flex: '1', minWidth: '300px' }}>
         <h3 style={{ margin: '0 0 12px 0', color: '#1e293b' }}>Processing Operations Target Queue</h3>
@@ -357,7 +343,8 @@ export default function Step5Preview({
         ) : (
           /* --- 📄 STANDALONE PDF CANVAS PREVIEW LAYOUT --- */
           <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '24px', background: '#94a3b8', minHeight: '550px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
-            <div style={{ background: '#ffffff', width: '100%', maxWidth: '650px', padding: '20px', borderRadius: '4px', boxShadow: '0 4px 10px rgba(0,0,0,0.15)', boxSizing: 'border-box' }}>
+            {/* ✨ ADD THE CLASS NAME KEY HERE TO PRESERVE STYLES DURING FILE COMPILATION */}
+            <div className="pdf-print-canvas" style={{ background: '#ffffff', width: '100%', maxWidth: '650px', padding: '20px', borderRadius: '4px', boxShadow: '0 4px 10px rgba(0,0,0,0.15)', boxSizing: 'border-box' }}>
               {/* Dynamic fully rendered page setup with surrounding template styles applies instantly here */}
               <div dangerouslySetInnerHTML={{ __html: activeFullTemplateHtml }} />
             </div>
