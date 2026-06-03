@@ -115,11 +115,12 @@ exports.updateCandidate = async (req, res) => {
 };
 
 exports.dispatchLetter = async (req, res) => {
-    // 📥 Safely capture inbound parameters from step 5 action hooks
+    let browser = null;
+    // 📥 Capture inbound parameters from frontend Step 5 action hooks
     const { email, name, htmlContent, subject, messageBody } = req.body;
     
     try {
-        console.log(`🚀 RUNNING BREVO WEB API DISPATCH WITH PDF ATTACHMENT FOR: ${email}`);
+        console.log(`🚀 INITIATING NATIVE PUPPETEER COMPILATION FOR: ${email}`);
 
         const senderEmail = process.env.EMAIL_USER || 'tejashwinidonoju678@gmail.com';
         const apiKey = process.env.BREVO_API_KEY;
@@ -131,8 +132,40 @@ exports.dispatchLetter = async (req, res) => {
             });
         }
 
-        // 📄 Encode the dynamic document layout cleanly into an API-compliant Base64 transport string
-        const base64HtmlAttachment = Buffer.from(htmlContent || '').toString('base64');
+        // =========================================================================
+        // ✨ NEW: SPIN UP HEADLESS CHROME TO PRINT A TRUE BINARY VECTOR PDF
+        // =========================================================================
+        browser = await puppeteer.launch({
+            executablePath: process.env.NODE_ENV === 'production' 
+                ? '/usr/bin/chromium-browser' 
+                : undefined,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--single-process'
+            ]
+        });
+
+        const page = await browser.newPage();
+        
+        // Load the candidate's custom compiled html template strings
+        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.emulateMediaType('screen');
+        
+        // Capture a clean, uncorrupted binary buffer array chunk
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+        
+        // Safely close the background browser thread context window
+        await browser.close();
+        browser = null; // Clear tracking state
+
+        // 📄 Convert the raw binary array into a clean Base64 transport string packet
+        const base64PdfAttachment = pdfBuffer.toString('base64');
+        // =========================================================================
+
+        console.log(`📨 Dispatching authentic PDF payload directly to Brevo for: ${email}`);
 
         // 🚀 Dispatch transactional payload directly over Brevo HTTP pipelines
         const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
@@ -143,7 +176,6 @@ exports.dispatchLetter = async (req, res) => {
             // ✉️ Functional context text appearing inside email frames
             textContent: messageBody || `Hello ${name || 'Candidate'},\n\nPlease download and review your official offer letter attached below.`,
             
-            // HTML backup canvas block fallback notification
             htmlContent: `<p style="font-family: sans-serif; font-size: 14px; color: #334155;">
                             Hello ${name || 'Candidate'},<br><br>
                             We are pleased to inform you that your official selection process is complete.<br>
@@ -151,10 +183,10 @@ exports.dispatchLetter = async (req, res) => {
                             Best regards,<br>Operations Team
                           </p>`,
             
-            // 📎 Pure, clean .pdf extension to ensure Gmail compliance
+            // 📎 Passing the authentic Base64 binary PDF string to Brevo!
             attachment: [
                 {
-                    content: base64HtmlAttachment,
+                    content: base64PdfAttachment, // ✨ FIX: No longer raw text HTML! This is a genuine binary file stream.
                     name: `Internship_Offer_${(name || 'Candidate').replace(/\s+/g, '_')}.pdf`
                 }
             ]
@@ -166,11 +198,16 @@ exports.dispatchLetter = async (req, res) => {
             }
         });
 
-        console.log(`🎉 Email with clean PDF attachment sent successfully to: ${email}`);
-        return res.status(200).json({ success: true, message: 'Offer letter attached as a downloadable PDF and sent!' });
+        console.log(`🎉 Email with genuine binary PDF sent successfully to: ${email}`);
+        return res.status(200).json({ success: true, message: 'Offer letter attached as an uncorrupted downloadable PDF and sent!' });
 
     } catch (error) {
         console.error("🚨 BREVO DISPATCH EXCEPTION:", error.response ? error.response.data : error.message);
+        
+        // Emergency cleanup loop to prevent thread locking if the compiler crashes mid-run
+        if (browser !== null) {
+            await browser.close();
+        }
         
         return res.status(500).json({ 
             error: "Web API Email Dispatch Failed", 
