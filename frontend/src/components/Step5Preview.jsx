@@ -22,21 +22,51 @@ export default function Step5Preview({
 
   const downloadPDF = async () => {
     try {
-        // Send your HTML data over to your live Render server
-        const response = await axios.post(`${apiBase}/api/generate-pdf`, { 
-            htmlContent: activeFullTemplateHtml 
-        }, { responseType: 'blob' }); // Expect a binary file back
+        setStatus('Compiling print vector sheets locally...');
         
-        // Create a temporary link in the browser to download the received file
-        const file = new Blob([response.data], { type: 'application/pdf' });
-        const fileURL = URL.createObjectURL(file);
-        const pdfLink = document.createElement('a');
-        pdfLink.href = fileURL;
-        pdfLink.download = `Offer_Letter_${(currentCandidate.name || 'Candidate').replace(/\s+/g, '_')}.pdf`;
-        pdfLink.click();
+        // 1. Create a completely isolated hidden iframe workspace inside your browser DOM
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        
+        document.body.appendChild(iframe);
+        
+        // 2. Inject your fully dynamic layout directly into the window document canvas
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(`
+          <html>
+            <head>
+              <title>Offer_Letter_${(currentCandidate.name || 'Candidate').replace(/\s+/g, '_')}</title>
+              <style>
+                @page { size: A4; margin: 20mm; }
+                body { margin: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              </style>
+            </head>
+            <body>
+              ${activeFullTemplateHtml}
+            </body>
+          </html>
+        `);
+        doc.close();
+        
+        // 3. Wait a split second for assets to sync, then call the browser's native print engine
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            
+            // 4. Clean up and remove the temporary iframe element from your DOM tree
+            document.body.removeChild(iframe);
+            setStatus('Local print sequence completed.');
+        }, 500);
+
     } catch (error) {
-        console.error("PDF download failed:", error);
-        alert("Could not generate PDF via backend server.");
+        console.error("Local printing failed:", error);
+        alert("Could not process local print pipeline command.");
     }
   };
 
