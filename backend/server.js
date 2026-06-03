@@ -34,9 +34,22 @@ app.post('/api/generate-pdf', async (req, res) => {
         }
         
         // Launch a headless browser instance on the server
-        const browser = await puppeteer.launch({
-            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required flags for cloud environments like Render
-        });
+        // 🚀 Update your Puppeteer Launch parameters to look exactly like this:
+const browser = await puppeteer.launch({
+    // Dynamically look for the Ubuntu Chromium path if deployed on Render, otherwise use local defaults
+    executablePath: process.env.NODE_ENV === 'production' 
+        ? '/usr/bin/chromium-browser' 
+        : undefined,
+    args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox', 
+        '--disable-dev-shm-usage', // ⚡ Critical: Prevents Render out-of-memory crashes
+        '--disable-accelerated-2d-canvas', 
+        '--no-first-run', 
+        '--no-zygote', 
+        '--single-process' // Saves massive RAM on Render's free tier
+    ]
+});
         const page = await browser.newPage();
         
         // Set the HTML content provided by the frontend
